@@ -1,0 +1,78 @@
+package handler
+
+import (
+	"encoding/json"
+
+	"github.com/cvicream/cv-icream-api/auth"
+	"github.com/cvicream/cv-icream-api/config"
+	"github.com/cvicream/cv-icream-api/model"
+	"github.com/cvicream/cv-icream-api/service"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
+)
+
+type GoogleUserInfo struct {
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	FamilyName    string `json:"family_name"`
+	GivenName     string `json:"given_name"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+}
+
+func GoogleAuth(c *fiber.Ctx) error {
+	path := auth.ConfigGoogle()
+	url := path.AuthCodeURL("state")
+	return c.Redirect(url)
+}
+
+func GoogleCallback(c *fiber.Ctx) error {
+	token, err := auth.ConfigGoogle().Exchange(c.Context(), c.FormValue("code"))
+	if err != nil {
+		log.Errorf("Could not get token: %s\n", err.Error())
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "could not get token", "data": nil})
+	}
+
+	client := auth.ConfigGoogle().Client(c.Context(), token)
+	userInfo, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
+	if err != nil {
+		log.Errorf("Could not get user info: %s\n", err.Error())
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "could not get user info", "data": nil})
+	}
+
+	defer userInfo.Body.Close()
+
+	var googleUserInfo GoogleUserInfo
+	err = json.NewDecoder(userInfo.Body).Decode(&googleUserInfo)
+	if err != nil {
+		log.Errorf("Could not decode user info: %s\n", err.Error())
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "could not decode user info", "data": nil})
+	}
+
+	user, err := service.GetUserByEmail(googleUserInfo.Email)
+	if user == nil || err != nil {
+		user, err = service.CreateUser(&model.User{
+			FirstName:  &googleUserInfo.GivenName,
+			LastName:   &googleUserInfo.FamilyName,
+			Email:      googleUserInfo.Email,
+			Avatar:     &googleUserInfo.Picture,
+			Provider:   "google",
+			ProviderID: &googleUserInfo.Sub,
+		})
+
+		if user == nil {
+			log.Errorf("Could not create user: %s\n", err.Error())
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+	}
+
+	jwtToken, err := service.CreateUserJwtToken(user)
+	if err != nil {
+		log.Errorf("Could not create jwt token: %s\n", err.Error())
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.Redirect(config.Config("FRONTEND_URL") + "?token=" + jwtToken)
+}
