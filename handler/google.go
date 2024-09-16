@@ -22,9 +22,10 @@ type GoogleUserInfo struct {
 }
 
 func GoogleAuth(c *fiber.Ctx) error {
-	referer := c.Get("referer")
+	redirectUrl := c.Query("redirect")
+	log.Infof("Redirect URL: %s\n", redirectUrl)
 	path := auth.ConfigGoogle()
-	url := path.AuthCodeURL(referer)
+	url := path.AuthCodeURL(redirectUrl)
 	return c.Redirect(url)
 }
 
@@ -78,5 +79,5 @@ func GoogleCallback(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.Redirect(redirectUrl + "dashboard?token=" + jwtToken)
+	return c.Redirect(redirectUrl + "/dashboard?token=" + jwtToken)
 }
