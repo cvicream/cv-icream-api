@@ -14,6 +14,7 @@ func SetupRoutes(app *fiber.App) {
 
 	auth := api.Group("/auth")
 	auth.Get("/user", middleware.Protected(), handler.GetCurrentUser)
+	auth.Put("/user", middleware.Protected(), handler.UpdateCurrentUser)
 
 	// Google auth
 	googleAuth := api.Group("/auth/google")

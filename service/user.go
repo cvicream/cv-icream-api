@@ -47,3 +47,19 @@ func CreateUser(user *model.User) (*model.User, error) {
 	}
 	return user, nil
 }
+
+func UpdateUser(id float64, user *model.User) (*model.User, error) {
+	var existingUser model.User
+	if err := database.DB.Where("id = ?", id).First(&existingUser).Error; err != nil {
+		return nil, err
+	}
+
+	existingUser.FirstName = user.FirstName
+	existingUser.LastName = user.LastName
+
+	result := database.DB.Save(&existingUser)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &existingUser, nil
+}
