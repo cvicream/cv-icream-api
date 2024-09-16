@@ -31,6 +31,7 @@ func GoogleAuth(c *fiber.Ctx) error {
 func GoogleCallback(c *fiber.Ctx) error {
 	// get redirect url from state
 	redirectUrl := c.FormValue("state")
+	log.Infof("Redirect URL: %s\n", redirectUrl)
 
 	token, err := auth.ConfigGoogle().Exchange(c.Context(), c.FormValue("code"))
 	if err != nil {
