@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/cvicream/cv-icream-api/auth"
-	"github.com/cvicream/cv-icream-api/config"
 	"github.com/cvicream/cv-icream-api/model"
 	"github.com/cvicream/cv-icream-api/service"
 
@@ -23,12 +22,16 @@ type GoogleUserInfo struct {
 }
 
 func GoogleAuth(c *fiber.Ctx) error {
+	referer := c.Get("referer")
 	path := auth.ConfigGoogle()
-	url := path.AuthCodeURL("state")
+	url := path.AuthCodeURL(referer)
 	return c.Redirect(url)
 }
 
 func GoogleCallback(c *fiber.Ctx) error {
+	// get redirect url from state
+	redirectUrl := c.FormValue("state")
+
 	token, err := auth.ConfigGoogle().Exchange(c.Context(), c.FormValue("code"))
 	if err != nil {
 		log.Errorf("Could not get token: %s\n", err.Error())
@@ -74,5 +77,5 @@ func GoogleCallback(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.Redirect(config.Config("FRONTEND_URL") + "?token=" + jwtToken)
+	return c.Redirect(redirectUrl + "dashboard?token=" + jwtToken)
 }
