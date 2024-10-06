@@ -30,6 +30,7 @@ func SetupRoutes(app *fiber.App) {
 	cv := api.Group("/cv", middleware.Protected())
 	cv.Get("/", handler.GetAllCVs)
 	cv.Get("/:id", handler.GetCV)
-	// cv.Post("/", middleware.Protected(), handler.CreateProduct)
-	// cv.Delete("/:id", middleware.Protected(), handler.DeleteProduct)
+	cv.Post("/", middleware.Protected(), handler.CreateCV)
+	cv.Put("/:id", middleware.Protected(), handler.UpdateCV)
+	cv.Delete("/:id", middleware.Protected(), handler.DeleteCV)
 }
