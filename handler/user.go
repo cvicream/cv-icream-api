@@ -36,3 +36,15 @@ func UpdateCurrentUser(c *fiber.Ctx) error {
 	}
 	return c.JSON(user)
 }
+
+func DeleteCurrentUser(c *fiber.Ctx) error {
+	jwtUser := c.Locals("user").(*jwt.Token)
+	claims := jwtUser.Claims.(jwt.MapClaims)
+	userId := claims["userId"].(float64)
+
+	err := service.DeleteUser(userId)
+	if err != nil {
+		return c.SendStatus(400)
+	}
+	return nil
+}
