@@ -15,6 +15,7 @@ func SetupRoutes(app *fiber.App) {
 	auth := api.Group("/auth")
 	auth.Get("/user", middleware.Protected(), handler.GetCurrentUser)
 	auth.Put("/user", middleware.Protected(), handler.UpdateCurrentUser)
+	auth.Delete("/user", middleware.Protected(), handler.DeleteCurrentUser)
 
 	// Google auth
 	googleAuth := api.Group("/auth/google")
@@ -33,4 +34,8 @@ func SetupRoutes(app *fiber.App) {
 	cv.Post("/", middleware.Protected(), handler.CreateCV)
 	cv.Put("/:id", middleware.Protected(), handler.UpdateCV)
 	cv.Delete("/:id", middleware.Protected(), handler.DeleteCV)
+
+	// Survey
+	survey := api.Group("/survey", middleware.Protected())
+	survey.Post("/", middleware.Protected(), handler.CreateSurvey)
 }

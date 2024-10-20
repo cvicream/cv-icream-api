@@ -79,5 +79,11 @@ func GoogleCallback(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.Redirect(redirectUrl + "/dashboard?token=" + jwtToken)
+	if err := service.CheckIfSurveyExist(user.ID); err != nil {
+		if err.Error() == "user already has a survey" {
+			return c.Redirect(redirectUrl + "/dashboard?token=" + jwtToken)
+		}
+	}
+
+	return c.Redirect(redirectUrl + "/survey?token=" + jwtToken)
 }
