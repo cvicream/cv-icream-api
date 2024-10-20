@@ -12,7 +12,7 @@ type User struct {
 	LastName   *string        `gorm:"size:50" json:"lastName"`
 	Email      string         `gorm:"size:255;not null" json:"email"`
 	Password   *string        `gorm:"size:255" json:"-"`
-	Avatar     *string        `gorm:"type:text" json:"avatar"`
+	Avatar     string         `gorm:"type:text" json:"avatar"`
 	Provider   string         `gorm:"size:50;not null" json:"provider"`
 	ProviderID *string        `gorm:"size:50" json:"providerId"`
 	CreatedAt  time.Time      `json:"createdAt"`

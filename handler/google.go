@@ -62,7 +62,7 @@ func GoogleCallback(c *fiber.Ctx) error {
 			FirstName:  &googleUserInfo.GivenName,
 			LastName:   &googleUserInfo.FamilyName,
 			Email:      googleUserInfo.Email,
-			Avatar:     &googleUserInfo.Picture,
+			Avatar:     service.ConvertImageToBase64(googleUserInfo.Picture),
 			Provider:   "google",
 			ProviderID: &googleUserInfo.Sub,
 		})
