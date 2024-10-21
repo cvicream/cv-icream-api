@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/cvicream/cv-icream-api/config"
@@ -62,4 +63,17 @@ func UpdateUser(id float64, user *model.User) (*model.User, error) {
 		return nil, result.Error
 	}
 	return &existingUser, nil
+}
+
+func DeleteUser(id float64) error {
+	result := database.DB.Delete(&model.User{}, id)
+	if result.Error != nil {
+			return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+			return fmt.Errorf("user with ID %v was not deleted", id)
+	}
+
+	return nil
 }
