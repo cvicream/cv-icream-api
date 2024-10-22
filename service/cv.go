@@ -17,7 +17,7 @@ func CreateCV(cv model.CV) (*model.CV, error) {
 
 func GetCVs() ([]model.CV, error) {
 	cvs := []model.CV{}
-	result := database.DB.Find(&cvs)
+	result := database.DB.Order("updated_at desc").Find(&cvs)
 	if result.Error != nil {
 		log.Errorf("Failed to retrieve CVs: %v", result.Error)
 		return nil, result.Error
