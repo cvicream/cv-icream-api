@@ -68,11 +68,11 @@ func UpdateUser(id float64, user *model.User) (*model.User, error) {
 func DeleteUser(id float64) error {
 	result := database.DB.Delete(&model.User{}, id)
 	if result.Error != nil {
-			return result.Error
+		return result.Error
 	}
 
 	if result.RowsAffected == 0 {
-			return fmt.Errorf("user with ID %v was not deleted", id)
+		return fmt.Errorf("user with ID %v was not deleted", id)
 	}
 
 	return nil

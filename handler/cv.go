@@ -20,7 +20,8 @@ func CreateCV(c *fiber.Ctx) error {
 }
 
 func GetAllCVs(c *fiber.Ctx) error {
-	cvs, err := service.GetCVs()
+	userId := c.Locals("userId").(float64)
+	cvs, err := service.GetCVs(userId)
 	if err != nil {
 		return c.SendStatus(500)
 	}
@@ -28,12 +29,13 @@ func GetAllCVs(c *fiber.Ctx) error {
 }
 
 func GetCV(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(float64)
 	id := c.Params("id")
 	if id == "" {
 		return c.SendStatus(400)
 	}
 
-	cv, err := service.GetCV(id)
+	cv, err := service.GetCV(userId, id)
 	if err != nil {
 		return c.SendStatus(500)
 	}
@@ -41,12 +43,27 @@ func GetCV(c *fiber.Ctx) error {
 }
 
 func UpdateCV(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(float64)
 	cv := new(model.CV)
 	if err := c.BodyParser(cv); err != nil {
 		return c.SendStatus(400)
 	}
 
-	cv, err := service.UpdateCV(cv)
+	cv, err := service.UpdateCV(userId, cv)
+	if err != nil {
+		return c.SendStatus(500)
+	}
+	return c.JSON(cv)
+}
+
+func UpdateCVTitle(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(float64)
+	cv := new(model.CV)
+	if err := c.BodyParser(cv); err != nil {
+		return c.SendStatus(400)
+	}
+
+	cv, err := service.UpdateCVTitle(userId, cv)
 	if err != nil {
 		return c.SendStatus(500)
 	}
@@ -54,12 +71,13 @@ func UpdateCV(c *fiber.Ctx) error {
 }
 
 func DeleteCV(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(float64)
 	id := c.Params("id")
 	if id == "" {
 		return c.SendStatus(400)
 	}
 
-	err := service.DeleteCV(id)
+	err := service.DeleteCV(userId, id)
 	if err != nil {
 		return c.SendStatus(500)
 	}

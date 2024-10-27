@@ -13,9 +13,9 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/", handler.Hello)
 
 	auth := api.Group("/auth")
-	auth.Get("/user", middleware.Protected(), handler.GetCurrentUser)
-	auth.Put("/user", middleware.Protected(), handler.UpdateCurrentUser)
-	auth.Delete("/user", middleware.Protected(), handler.DeleteCurrentUser)
+	auth.Get("/user", middleware.Protected(), middleware.ExtractUserID(), handler.GetCurrentUser)
+	auth.Put("/user", middleware.Protected(), middleware.ExtractUserID(), handler.UpdateCurrentUser)
+	auth.Delete("/user", middleware.Protected(), middleware.ExtractUserID(), handler.DeleteCurrentUser)
 
 	// Google auth
 	googleAuth := api.Group("/auth/google")
@@ -28,14 +28,15 @@ func SetupRoutes(app *fiber.App) {
 	linkedinAuth.Get("/callback", handler.LinkedInCallback)
 
 	// CV
-	cv := api.Group("/cv", middleware.Protected())
+	cv := api.Group("/cv", middleware.Protected(), middleware.ExtractUserID())
 	cv.Get("/", handler.GetAllCVs)
 	cv.Get("/:id", handler.GetCV)
-	cv.Post("/", middleware.Protected(), handler.CreateCV)
-	cv.Put("/:id", middleware.Protected(), handler.UpdateCV)
-	cv.Delete("/:id", middleware.Protected(), handler.DeleteCV)
+	cv.Post("/", handler.CreateCV)
+	cv.Put("/:id", handler.UpdateCV)
+	cv.Put("/:id/title", handler.UpdateCVTitle)
+	cv.Delete("/:id", handler.DeleteCV)
 
 	// Survey
-	survey := api.Group("/survey", middleware.Protected())
-	survey.Post("/", middleware.Protected(), handler.CreateSurvey)
+	survey := api.Group("/survey", middleware.Protected(), middleware.ExtractUserID())
+	survey.Post("/", handler.CreateSurvey)
 }
