@@ -32,9 +32,9 @@ func GetUserById(id float64) (*model.User, error) {
 	return &user, nil
 }
 
-func GetUserByEmail(email string) (*model.User, error) {
+func GetUserByEmail(email string, provider string) (*model.User, error) {
 	var user model.User
-	result := database.DB.Where("email = ?", email).First(&user)
+	result := database.DB.Where("email = ? AND provider = ?", email, provider).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}

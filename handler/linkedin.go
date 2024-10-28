@@ -6,17 +6,36 @@ import (
 	"fmt"
 
 	"github.com/cvicream/cv-icream-api/auth"
+	"github.com/cvicream/cv-icream-api/model"
+	"github.com/cvicream/cv-icream-api/service"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/oauth2"
+	"github.com/gofiber/fiber/v2/log"
 )
 
+type LinkedInUserInfo struct {
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	FamilyName    string `json:"family_name"`
+	GivenName     string `json:"given_name"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+}
+
 func LinkedInAuth(c *fiber.Ctx) error {
-	url := auth.ConfigLinkedIn().AuthCodeURL("state", oauth2.AccessTypeOffline)
+	redirectUrl := c.Query("redirect")
+	log.Infof("Redirect URL: %s\n", redirectUrl)
+	path := auth.ConfigLinkedIn()
+	url := path.AuthCodeURL(redirectUrl)
 	return c.Redirect(url)
 }
 
 func LinkedInCallback(c *fiber.Ctx) error {
+	// get redirect url from state
+	redirectUrl := c.FormValue("state")
+	log.Infof("Redirect URL: %s\n", redirectUrl)
+
 	// Get the authorization code from LinkedIn
 	code := c.Query("code")
 	if code == "" {
@@ -40,17 +59,47 @@ func LinkedInCallback(c *fiber.Ctx) error {
 
 	// Make request to LinkedIn API to get user profile
 	client := auth.ConfigLinkedIn().Client(context.Background(), token)
-	resp, err := client.Get("https://api.linkedin.com/v2/me")
+	userInfo, err := client.Get("https://api.linkedin.com/v2/userinfo")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to get user info")
 	}
-	defer resp.Body.Close()
+	defer userInfo.Body.Close()
 
-	var profile map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to decode user profile")
+	var linkedinUserInfo LinkedInUserInfo
+	err = json.NewDecoder(userInfo.Body).Decode(&linkedinUserInfo)
+	if err != nil {
+		log.Errorf("Could not decode user info: %s\n", err.Error())
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "could not decode user info", "data": nil})
 	}
 
-	// Display the user profile
-	return c.JSON(profile)
+	user, err := service.GetUserByEmail(linkedinUserInfo.Email, "linkedin")
+	if user == nil || err != nil {
+		user, err = service.CreateUser(&model.User{
+			FirstName:  &linkedinUserInfo.GivenName,
+			LastName:   &linkedinUserInfo.FamilyName,
+			Email:      linkedinUserInfo.Email,
+			Avatar:     service.ConvertImageToBase64(linkedinUserInfo.Picture),
+			Provider:   "linkedin",
+			ProviderID: &linkedinUserInfo.Sub,
+		})
+
+		if user == nil {
+			log.Errorf("Could not create user: %s\n", err.Error())
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+	}
+
+	jwtToken, err := service.CreateUserJwtToken(user)
+	if err != nil {
+		log.Errorf("Could not create jwt token: %s\n", err.Error())
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	if err := service.CheckIfSurveyExist(user.ID); err != nil {
+		if err.Error() == "user already has a survey" {
+			return c.Redirect(redirectUrl + "/dashboard?token=" + jwtToken)
+		}
+	}
+
+	return c.Redirect(redirectUrl + "/survey?token=" + jwtToken)
 }

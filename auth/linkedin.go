@@ -12,7 +12,7 @@ func ConfigLinkedIn() *oauth2.Config {
 		ClientID:     config.Config("LINKEDIN_CLIENT_ID"),
 		ClientSecret: config.Config("LINKEDIN_CLIENT_SECRET"),
 		RedirectURL:  config.Config("LINKEDIN_REDIRECT_URL"),
-		Scopes:       []string{"r_liteprofile", "r_emailaddress", "openid"},
+		Scopes:       []string{"openid", "profile", "w_member_social", "email"},
 		Endpoint:     linkedin.Endpoint,
 	}
 

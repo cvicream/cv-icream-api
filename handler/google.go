@@ -56,7 +56,7 @@ func GoogleCallback(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "could not decode user info", "data": nil})
 	}
 
-	user, err := service.GetUserByEmail(googleUserInfo.Email)
+	user, err := service.GetUserByEmail(googleUserInfo.Email, "google")
 	if user == nil || err != nil {
 		user, err = service.CreateUser(&model.User{
 			FirstName:  &googleUserInfo.GivenName,
