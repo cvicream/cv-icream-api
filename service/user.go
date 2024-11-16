@@ -66,7 +66,7 @@ func UpdateUser(id float64, user *model.User) (*model.User, error) {
 }
 
 func DeleteUser(id float64) error {
-	result := database.DB.Delete(&model.User{}, id)
+	result := database.DB.Unscoped().Delete(&model.User{}, id)
 	if result.Error != nil {
 		return result.Error
 	}

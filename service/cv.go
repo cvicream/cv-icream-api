@@ -54,9 +54,18 @@ func UpdateCVTitle(userId float64, cv *model.CV) (*model.CV, error) {
 }
 
 func DeleteCV(userId float64, id string) error {
-	result := database.DB.Where("user_id = ? AND id = ?", userId, id).Delete(&model.CV{})
+	result := database.DB.Unscoped().Where("user_id = ? AND id = ?", userId, id).Delete(&model.CV{})
 	if result.Error != nil {
 		log.Errorf("Failed to delete CV: %v", result.Error)
+		return result.Error
+	}
+	return nil
+}
+
+func DeleteCVs(userId float64) error {
+	result := database.DB.Unscoped().Where("user_id = ?", userId).Delete(&model.CV{})
+	if result.Error != nil {
+		log.Errorf("Failed to delete CVs: %v", result.Error)
 		return result.Error
 	}
 	return nil

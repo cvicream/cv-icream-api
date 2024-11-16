@@ -32,6 +32,14 @@ func UpdateCurrentUser(c *fiber.Ctx) error {
 
 func DeleteCurrentUser(c *fiber.Ctx) error {
 	userId := c.Locals("userId").(float64)
+	errSurveys := service.DeleteSurveys(userId)
+	if errSurveys != nil {
+		return c.SendStatus(400)
+	}
+	errCVs := service.DeleteCVs(userId)
+	if errCVs != nil {
+		return c.SendStatus(400)
+	}
 	err := service.DeleteUser(userId)
 	if err != nil {
 		return c.SendStatus(400)
