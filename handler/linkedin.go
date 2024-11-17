@@ -73,6 +73,7 @@ func LinkedInCallback(c *fiber.Ctx) error {
 	}
 
 	user, err := service.GetUserByEmail(linkedinUserInfo.Email, "linkedin")
+	isNewUser := false
 	if user == nil || err != nil {
 		user, err = service.CreateUser(&model.User{
 			FirstName:  &linkedinUserInfo.GivenName,
@@ -87,6 +88,8 @@ func LinkedInCallback(c *fiber.Ctx) error {
 			log.Errorf("Could not create user: %s\n", err.Error())
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
+
+		isNewUser = true
 	}
 
 	jwtToken, err := service.CreateUserJwtToken(user)
@@ -95,10 +98,9 @@ func LinkedInCallback(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	if err := service.CheckIfSurveyExist(user.ID); err != nil {
-		if err.Error() == "user already has a survey" {
-			return c.Redirect(redirectUrl + "/dashboard?token=" + jwtToken)
-		}
+	errSurvey := service.CheckIfSurveyExist(user.ID)
+	if (errSurvey != nil && errSurvey.Error() == "user already has a survey") || !isNewUser {
+		return c.Redirect(redirectUrl + "/dashboard?token=" + jwtToken)
 	}
 
 	return c.Redirect(redirectUrl + "/survey?token=" + jwtToken)
