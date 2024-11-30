@@ -35,23 +35,27 @@ func LinkedInCallback(c *fiber.Ctx) error {
 	// get redirect url from state
 	redirectUrl := c.FormValue("state")
 	log.Infof("Redirect URL: %s\n", redirectUrl)
+	signInUrl := redirectUrl + "/sign-in"
 
 	// Get the authorization code from LinkedIn
 	code := c.Query("code")
 	if code == "" {
-		return c.Status(fiber.StatusBadRequest).SendString("Missing 'code' in query")
+		log.Infof("Missing 'code' in query")
+		return c.Redirect(signInUrl)
 	}
 
 	// Exchange code for OAuth2 token
 	token, err := auth.ConfigLinkedIn().Exchange(context.Background(), code)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to exchange token")
+		log.Infof("Failed to exchange token")
+		return c.Redirect(signInUrl)
 	}
 
 	// Extract OpenID Connect ID token (JWT)
 	idToken := token.Extra("id_token")
 	if idToken == nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("No ID token found")
+		log.Infof("No ID token found")
+		return c.Redirect(signInUrl)
 	}
 
 	// Decode the ID Token (JWT)
@@ -61,7 +65,8 @@ func LinkedInCallback(c *fiber.Ctx) error {
 	client := auth.ConfigLinkedIn().Client(context.Background(), token)
 	userInfo, err := client.Get("https://api.linkedin.com/v2/userinfo")
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to get user info")
+		log.Infof("Failed to get user info")
+		return c.Redirect(signInUrl)
 	}
 	defer userInfo.Body.Close()
 
